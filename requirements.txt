@@ -6,6 +6,7 @@ pinecone-client
 python-dotenv
 tiktoken
 wikipedia
+pymupdf
 pypdf
 docx2txt
 fitz
