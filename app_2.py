@@ -189,7 +189,9 @@ if __name__ == "__main__":
         add_data = st.button('Add Data to PINECONE', on_click=clear_history)
 
         if st.session_state.uploaded_file and add_data:
-            if not pine_api_key:
+            if not api_key:
+                st.error("Please provide a valid OpenAI API Key before adding data.")
+            elif not pine_api_key:
                 st.error("Please provide a valid PINECONE API Key before adding data.")
             else:
                 with st.spinner('Reading, chunking and embedding file ...'):
@@ -207,12 +209,15 @@ if __name__ == "__main__":
     
     
                     index_name = f"chat-{uuid.uuid4()}"
-                    vector_store = insert_or_fetch_embeddings(chunks, index_name)
-    
-                    st.session_state.vs = vector_store
-                    st.session_state.file_name = file_name
-                    st.write("Index name: ", index_name)
-                    st.success('File uploaded, chunked and embedded successfully.')
+
+                    try:
+                        vector_store = insert_or_fetch_embeddings(chunks, index_name)
+                        st.session_state.vs = vector_store
+                        st.session_state.file_name = file_name
+                        st.write("Index name: ", index_name)
+                        st.success('File uploaded, chunked and embedded successfully.')
+                    except Exception as e:
+                        st.error(f"Error adding data to Pinecone: {str(e)}")
 
 
     del_index = st.sidebar.button('Delete all PINECONE index')
@@ -252,17 +257,22 @@ if __name__ == "__main__":
 
     q = st.text_input('Ask a question about the uploaded report:')
     if q and 'vs' in st.session_state:
-        vector_store = st.session_state.vs
-        # st.write(f'k: {k}')
-        answer = ask_and_get_answer(vector_store, q, k)
-        st.text_area('LLM Answer:', value = answer)
-
-        st.divider()
-        if 'history' not in st.session_state:
-            st.session_state.history = ''
-        value = f'Q: {q} \nA: {answer}'
-        st.session_state.history = f'{value} \n {"-" *100} \n {st.session_state.history}'
-        h = st.session_state.__hash__
-        # h = st.session_state.history
-
-        st.text_area(label="Chat History", value = h, key = 'history', height=400)
+        if not openai_api_key:
+            st.error("Please provide a valid OpenAI API Key to ask questions.")
+        elif 'vs' not in st.session_state:
+            st.error("Please upload and process a file first.")
+        else:
+            vector_store = st.session_state.vs
+            # st.write(f'k: {k}')
+            answer = ask_and_get_answer(vector_store, q, k)
+            st.text_area('LLM Answer:', value = answer)
+    
+            st.divider()
+            if 'history' not in st.session_state:
+                st.session_state.history = ''
+            value = f'Q: {q} \nA: {answer}'
+            st.session_state.history = f'{value} \n {"-" *100} \n {st.session_state.history}'
+            h = st.session_state.__hash__
+            # h = st.session_state.history
+    
+            st.text_area(label="Chat History", value = h, key = 'history', height=400)
