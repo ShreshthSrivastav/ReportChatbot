@@ -191,7 +191,7 @@ if __name__ == "__main__":
 
         st.session_state.uploaded_file = st.file_uploader("Upload the report:", type=['pdf', 'docx', 'txt'])
         chunk_size = st.number_input('Chunk Size:', value=512, min_value=100, max_value=2048, on_change=clear_history)
-        k = st.number_input('k (Number of top documents)', value=3, min_value=1, max_value=20, on_change = clear_history)   
+        k = st.number_input('k (Number of top documents):', value=3, min_value=1, max_value=20, on_change = clear_history)   
         add_data = st.button('Add Data to PINECONE', on_click=clear_history)
 
         if st.session_state.uploaded_file and add_data:
