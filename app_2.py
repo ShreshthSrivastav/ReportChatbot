@@ -36,16 +36,16 @@ def load_document(file):
         from langchain_community.document_loaders import PyPDFLoader
         print(f'Loading {file}')
         loader = PyPDFLoader(file)
-    # elif extension == '.docx':
-    #     from langchain.document_loaders import Docx2txtLoader
-    #     print(f'Loading {file}')
-    #     loader = Docx2txtLoader(file)
-    # elif extension == '.txt':
-    #     from langchain.document_loaders import TextLoader
-    #     loader = TextLoader(file)
-    # else:
-    #     print('Document format is not supported!')
-    #     return None
+    elif extension == '.docx':
+        from langchain.document_loaders import Docx2txtLoader
+        print(f'Loading {file}')
+        loader = Docx2txtLoader(file)
+    elif extension == '.txt':
+        from langchain.document_loaders import TextLoader
+        loader = TextLoader(file)
+    else:
+        print('Document format is not supported!')
+        return None
 
     data = loader.load()
     return data
@@ -178,11 +178,7 @@ def clear_history():
 
 if __name__ == "__main__":
 
-    # import os
-    # from dotenv import load_dotenv, find_dotenv
-    # load_dotenv(find_dotenv(), override=True)
-
-    # st.image("img.png")
+    
     st.subheader("Petroleum Report Chatbot using RAG-Pinecone-LLM 🤖")
     with st.sidebar:
         api_key = st.text_input('OpenAI API Key:', type='password') 
@@ -218,6 +214,7 @@ if __name__ == "__main__":
 
                 st.session_state.vs = vector_store
                 st.session_state.file_name = file_name
+                st.write("Index name: ", index_name)
                 st.success('File uploaded, chunked and embedded successfully.')
 
 
@@ -256,7 +253,7 @@ if __name__ == "__main__":
 
 
 
-    q = st.text_input('Ask a question about the uploaded DDR report:')
+    q = st.text_input('Ask a question about the uploaded report:')
     if q and 'vs' in st.session_state:
         vector_store = st.session_state.vs
         # st.write(f'k: {k}')
