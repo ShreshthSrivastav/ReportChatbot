@@ -189,27 +189,30 @@ if __name__ == "__main__":
         add_data = st.button('Add Data to PINECONE', on_click=clear_history)
 
         if st.session_state.uploaded_file and add_data:
-            with st.spinner('Reading, chunking and embedding file ...'):
-                bytes_data = st.session_state.uploaded_file.read()
-                file_name = os.path.join('./', st.session_state.uploaded_file.name)
-                with open(file_name, 'wb') as f:
-                    f.write(bytes_data)
-
-                data = load_document(file_name)
-                chunks = chunk_data(data, chunk_size=chunk_size)
-                st.write(f'Chunk size: {chunk_size}, Chunks: {len(chunks)}')
-
-                tokens, embedding_cost = calculate_embedding_cost(chunks)
-                st.write(f'Embedding cost: ${embedding_cost:.4f}')
-
-
-                index_name = f"chat-{uuid.uuid4()}"
-                vector_store = insert_or_fetch_embeddings(chunks, index_name)
-
-                st.session_state.vs = vector_store
-                st.session_state.file_name = file_name
-                st.write("Index name: ", index_name)
-                st.success('File uploaded, chunked and embedded successfully.')
+            if not pine_api_key:
+                st.error("Please provide a valid PINECONE API Key before adding data.")
+            else:
+                with st.spinner('Reading, chunking and embedding file ...'):
+                    bytes_data = st.session_state.uploaded_file.read()
+                    file_name = os.path.join('./', st.session_state.uploaded_file.name)
+                    with open(file_name, 'wb') as f:
+                        f.write(bytes_data)
+    
+                    data = load_document(file_name)
+                    chunks = chunk_data(data, chunk_size=chunk_size)
+                    st.write(f'Chunk size: {chunk_size}, Chunks: {len(chunks)}')
+    
+                    tokens, embedding_cost = calculate_embedding_cost(chunks)
+                    st.write(f'Embedding cost: ${embedding_cost:.4f}')
+    
+    
+                    index_name = f"chat-{uuid.uuid4()}"
+                    vector_store = insert_or_fetch_embeddings(chunks, index_name)
+    
+                    st.session_state.vs = vector_store
+                    st.session_state.file_name = file_name
+                    st.write("Index name: ", index_name)
+                    st.success('File uploaded, chunked and embedded successfully.')
 
 
     del_index = st.sidebar.button('Delete all PINECONE index')
