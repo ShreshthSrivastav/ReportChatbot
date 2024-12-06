@@ -257,7 +257,7 @@ if __name__ == "__main__":
 
     q = st.text_input('Ask a question about the uploaded report:')
     if q and 'vs' in st.session_state:
-        if not openai_api_key:
+        if not api_key:
             st.error("Please provide a valid OpenAI API Key to ask questions.")
         elif 'vs' not in st.session_state:
             st.error("Please upload and process a file first.")
