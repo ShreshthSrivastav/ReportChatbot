@@ -15,16 +15,10 @@ from langchain_openai import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 import pinecone
-from dotenv import load_dotenv, find_dotenv
-
-import pinecone
 from langchain_community.vectorstores import Pinecone
 from langchain_openai import OpenAIEmbeddings
 from pinecone import PodSpec
 from pinecone import ServerlessSpec
-
-# load_dotenv(find_dotenv(), override=True)
-
 
 # loading PDF, DOCX and TXT files as LangChain Documents
 def load_document(file):
