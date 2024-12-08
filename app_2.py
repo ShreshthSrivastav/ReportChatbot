@@ -37,8 +37,8 @@ def validate_openai_api_key(api_key):
 # Function to validate Pinecone API Key
 def validate_pinecone_api_key(api_key):
     try:
-        pinecone.init(api_key=api_key)
-        pinecone.list_indexes()  # Test operation
+        pc = pinecone.Pinecone(api_key=api_key)
+        pc.list_indexes()   # Test operation
         return True
     except Exception as e:
         st.error(f"Invalid Pinecone API Key: {e}")
@@ -85,14 +85,14 @@ def insert_or_fetch_embeddings(chunks, index_name, api_key):
     # from pinecone import PodSpec
     # from pinecone import ServerlessSpec
 
-    pinecone.init(api_key=api_key)
+    pc = pinecone.Pinecone(api_key=api_key)
     embeddings = OpenAIEmbeddings()
     
     # pc = pinecone.Pinecone(api_key=os.environ['PINECONE_API_KEY'])
     # embeddings = OpenAIEmbeddings(model='text-embedding-3-small', dimensions=1536)  # 512 works as well
 
     # loading from existing index
-    if index_name in pinecone.list_indexes():
+    if index_name in pc.list_indexes():
         print(f'Index {index_name} already exists. Loading embeddings ... ', end='')
         vector_store = Pinecone.from_existing_index(index_name, embeddings)
         print('Ok')
@@ -101,7 +101,7 @@ def insert_or_fetch_embeddings(chunks, index_name, api_key):
         print(f'Creating index {index_name} and embeddings ...', end='')
 
         # creating a new index
-        pinecone.create_index(
+        pc.create_index(
             name=index_name,
             dimension=1536,  #1536
             metric='cosine',
@@ -171,17 +171,17 @@ def calculate_embedding_cost(texts):
 def delete_pinecone_index(api_key,index_name='all'):
 
     # pc = pinecone.Pinecone()
-    pinecone.init(api_key=api_key)
+    pc = pinecone.Pinecone(api_key=api_key)
     
     if index_name == 'all':
-        indexes = pinecone.list_indexes().names()
+        indexes = pc.list_indexes().names()
         print('Deleting all indexes ... ')
         for index in indexes:
-            pinecone.delete_index(index)
+            pc.delete_index(index)
         print('Ok')
     else:
         print(f'Deleting index {index_name} ...', end='')
-        pinecone.delete_index(index_name)
+        pc.delete_index(index_name)
         print('Ok')
     
 
