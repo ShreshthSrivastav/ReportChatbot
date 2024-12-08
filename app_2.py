@@ -94,7 +94,7 @@ def insert_or_fetch_embeddings(chunks, index_name, api_key):
     # loading from existing index
     if index_name in pc.list_indexes():
         print(f'Index {index_name} already exists. Loading embeddings ... ', end='')
-        vector_store = Pinecone.from_existing_index(index_name, embeddings)
+        vector_store = pc.from_existing_index(index_name, embeddings)
         print('Ok')
     else:
         # creating the index and embedding the chunks into the index 
