@@ -205,13 +205,13 @@ if __name__ == "__main__":
         # if pine_api_key:
         #     os.environ['PINECONE_API_KEY'] = pine_api_key
 
+        openai_api_key = st.text_input('OpenAI API Key:', type='password')
+        pinecone_api_key = st.text_input('Pinecone API Key:', type='password')
+
         st.session_state.uploaded_file = st.file_uploader("Upload the report:", type=['pdf', 'docx', 'txt'])
         chunk_size = st.number_input('Chunk Size:', value=512, min_value=100, max_value=2048, on_change=clear_history)
         k = st.number_input('k (Number of top documents):', value=3, min_value=1, max_value=20, on_change = clear_history)   
         add_data = st.button('Add Data to PINECONE', on_click=clear_history)
-
-        openai_api_key = st.text_input('OpenAI API Key:', type='password')
-        pinecone_api_key = st.text_input('Pinecone API Key:', type='password')
 
         # Validate API keys
         openai_valid = validate_openai_api_key(openai_api_key) if openai_api_key else False
