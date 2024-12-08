@@ -20,6 +20,30 @@ from langchain_openai import OpenAIEmbeddings
 from pinecone import PodSpec
 from pinecone import ServerlessSpec
 
+
+# Function to validate OpenAI API Key
+def validate_openai_api_key(api_key):
+    try:
+        os.environ['OPENAI_API_KEY'] = api_key
+        # Perform a simple operation to validate the key
+        embeddings = OpenAIEmbeddings()
+        embeddings.embed_query("test")  # Test query
+        return True
+    except Exception as e:
+        st.error(f"Invalid OpenAI API Key: {e}")
+        return False
+
+
+# Function to validate Pinecone API Key
+def validate_pinecone_api_key(api_key):
+    try:
+        pinecone.init(api_key=api_key)
+        pinecone.list_indexes()  # Test operation
+        return True
+    except Exception as e:
+        st.error(f"Invalid Pinecone API Key: {e}")
+        return False
+
 # loading PDF, DOCX and TXT files as LangChain Documents
 def load_document(file):
     import os
@@ -52,16 +76,8 @@ def chunk_data(data, chunk_size=256, chunk_overlap = 20):
     return chunks
 
 
-# Embedding the chunks into a vector store
-def create_embeddings(chunks):
-    embeddings = OpenAIEmbeddings(
-        # model='text-embedding-ada-002'
-        )
-    # vector_store = Chroma.from_documents(chunks, embeddings)
-    return vector_store
-
 # Insert embeddings into Pinecone or fetch existing ones
-def insert_or_fetch_embeddings(chunks, index_name):
+def insert_or_fetch_embeddings(chunks, index_name, api_key):
     # importing the necessary libraries and initializing the Pinecone client
     # import pinecone
     # from langchain_community.vectorstores import Pinecone
@@ -69,12 +85,14 @@ def insert_or_fetch_embeddings(chunks, index_name):
     # from pinecone import PodSpec
     # from pinecone import ServerlessSpec
 
+    pinecone.init(api_key=api_key)
+    embeddings = OpenAIEmbeddings()
     
-    pc = pinecone.Pinecone(api_key=os.environ['PINECONE_API_KEY'])
-    embeddings = OpenAIEmbeddings(model='text-embedding-3-small', dimensions=1536)  # 512 works as well
+    # pc = pinecone.Pinecone(api_key=os.environ['PINECONE_API_KEY'])
+    # embeddings = OpenAIEmbeddings(model='text-embedding-3-small', dimensions=1536)  # 512 works as well
 
     # loading from existing index
-    if index_name in pc.list_indexes():
+    if index_name in pinecone.list_indexes():
         print(f'Index {index_name} already exists. Loading embeddings ... ', end='')
         vector_store = Pinecone.from_existing_index(index_name, embeddings)
         print('Ok')
@@ -83,7 +101,7 @@ def insert_or_fetch_embeddings(chunks, index_name):
         print(f'Creating index {index_name} and embeddings ...', end='')
 
         # creating a new index
-        pc.create_index(
+        pinecone.create_index(
             name=index_name,
             dimension=1536,  #1536
             metric='cosine',
@@ -131,7 +149,7 @@ def ask_and_get_answer(vector_store, q, k=3):
         # if answer.strip():  # If an answer is found, return it
         return answer.get('answer', "I'm sorry, I couldn't find an answer.")
     except Exception as e:
-        print(f"Retrieval error: {e}")
+        st.error(f"Error in retrieval: {e}")
 
 
     general_prompt = f"Answer this question as an intelligent assistant: {q}"
@@ -151,18 +169,19 @@ def calculate_embedding_cost(texts):
     return total_tokens,   total_tokens / 1000 * 0.0004
 
 def delete_pinecone_index(index_name='all'):
-    # import pinecone
-    pc = pinecone.Pinecone()
+
+    # pc = pinecone.Pinecone()
+    pinecone.init(api_key=api_key)
     
     if index_name == 'all':
-        indexes = pc.list_indexes().names()
+        indexes = pinecone.list_indexes().names()
         print('Deleting all indexes ... ')
         for index in indexes:
-            pc.delete_index(index)
+            pinecone.delete_index(index)
         print('Ok')
     else:
         print(f'Deleting index {index_name} ...', end='')
-        pc.delete_index(index_name)
+        pinecone.delete_index(index_name)
         print('Ok')
     
 
@@ -171,17 +190,28 @@ def clear_history():
         del st.session_state['history']
 
 if __name__ == "__main__":
-
-    
     st.subheader("Petroleum Report Chatbot using RAG-Pinecone-LLM 🤖")
+    
+    # Sidebar for API keys
     with st.sidebar:
-        api_key = st.text_input('OpenAI API Key:', type='password') 
-        if api_key:
-            os.environ['OPENAI_API_KEY'] = api_key
+        openai_api_key = st.text_input('OpenAI API Key:', type='password')
+        pinecone_api_key = st.text_input('Pinecone API Key:', type='password')
 
-        pine_api_key = st.text_input('PINECONE API Key:', type='password') 
-        if pine_api_key:
-            os.environ['PINECONE_API_KEY'] = pine_api_key
+        # Validate API keys
+        openai_valid = validate_openai_api_key(openai_api_key) if openai_api_key else False
+        pinecone_valid = validate_pinecone_api_key(pinecone_api_key) if pinecone_api_key else False
+
+        if not (openai_valid and pinecone_valid):
+            st.stop()
+
+        
+        # api_key = st.text_input('OpenAI API Key:', type='password') 
+        # if api_key:
+        #     os.environ['OPENAI_API_KEY'] = api_key
+
+        # pine_api_key = st.text_input('PINECONE API Key:', type='password') 
+        # if pine_api_key:
+        #     os.environ['PINECONE_API_KEY'] = pine_api_key
 
         st.session_state.uploaded_file = st.file_uploader("Upload the report:", type=['pdf', 'docx', 'txt'])
         chunk_size = st.number_input('Chunk Size:', value=512, min_value=100, max_value=2048, on_change=clear_history)
@@ -189,35 +219,35 @@ if __name__ == "__main__":
         add_data = st.button('Add Data to PINECONE', on_click=clear_history)
 
         if st.session_state.uploaded_file and add_data:
-            if not api_key:
-                st.error("Please provide a valid OpenAI API Key before adding data.")
-            elif not pine_api_key:
-                st.error("Please provide a valid PINECONE API Key before adding data.")
-            else:
-                with st.spinner('Reading, chunking and embedding file ...'):
-                    bytes_data = st.session_state.uploaded_file.read()
-                    file_name = os.path.join('./', st.session_state.uploaded_file.name)
-                    with open(file_name, 'wb') as f:
-                        f.write(bytes_data)
-    
-                    data = load_document(file_name)
+            # if not api_key:
+            #     st.error("Please provide a valid OpenAI API Key before adding data.")
+            # elif not pine_api_key:
+            #     st.error("Please provide a valid PINECONE API Key before adding data.")
+            # else:
+            with st.spinner('Reading, chunking and embedding file ...'):
+                bytes_data = st.session_state.uploaded_file.read()
+                file_name = os.path.join('./', st.session_state.uploaded_file.name)
+                with open(file_name, 'wb') as f:
+                    f.write(bytes_data)
+
+                data = load_document(file_name)
+                if data:
                     chunks = chunk_data(data, chunk_size=chunk_size)
                     st.write(f'Chunk size: {chunk_size}, Chunks: {len(chunks)}')
-    
+
                     tokens, embedding_cost = calculate_embedding_cost(chunks)
                     st.write(f'Embedding cost: ${embedding_cost:.4f}')
-    
-    
+
                     index_name = f"chat-{uuid.uuid4()}"
 
-                    try:
-                        vector_store = insert_or_fetch_embeddings(chunks, index_name)
-                        st.session_state.vs = vector_store
-                        st.session_state.file_name = file_name
-                        st.write("Index name: ", index_name)
-                        st.success('File uploaded, chunked and embedded successfully.')
-                    except Exception as e:
-                        st.error(f"Error adding data to Pinecone: {str(e)}")
+                try:
+                    vector_store = insert_or_fetch_embeddings(chunks, index_name, pinecone_api_key)
+                    st.session_state.vs = vector_store
+                    st.session_state.file_name = file_name
+                    st.write("Index name: ", index_name)
+                    st.success('File uploaded, chunked and embedded successfully.')
+                except Exception as e:
+                    st.error(f"Error adding data to Pinecone: {str(e)}")
 
 
     del_index = st.sidebar.button('Delete all PINECONE index')
@@ -257,22 +287,24 @@ if __name__ == "__main__":
 
     q = st.text_input('Ask a question about the uploaded report:')
     if q and 'vs' in st.session_state:
-        if not api_key:
-            st.error("Please provide a valid OpenAI API Key to ask questions.")
-        elif 'vs' not in st.session_state:
-            st.error("Please upload and process a file first.")
-        else:
-            vector_store = st.session_state.vs
-            # st.write(f'k: {k}')
-            answer = ask_and_get_answer(vector_store, q, k)
+        # if not api_key:
+        #     st.error("Please provide a valid OpenAI API Key to ask questions.")
+        # elif 'vs' not in st.session_state:
+        #     st.error("Please upload and process a file first.")
+        # else:
+        
+        vector_store = st.session_state.vs
+        # st.write(f'k: {k}')
+        answer = ask_and_get_answer(vector_store, q, k)
+        if answer:
             st.text_area('LLM Answer:', value = answer)
-    
-            st.divider()
-            if 'history' not in st.session_state:
-                st.session_state.history = ''
-            value = f'Q: {q} \nA: {answer}'
-            st.session_state.history = f'{value} \n {"-" *100} \n {st.session_state.history}'
-            h = st.session_state.__hash__
-            # h = st.session_state.history
-    
-            st.text_area(label="Chat History", value = h, key = 'history', height=400)
+
+        st.divider()
+        if 'history' not in st.session_state:
+            st.session_state.history = ''
+        value = f'Q: {q} \nA: {answer}'
+        st.session_state.history = f'{value} \n {"-" *100} \n {st.session_state.history}'
+        h = st.session_state.__hash__
+        # h = st.session_state.history
+
+        st.text_area(label="Chat History", value = h, key = 'history', height=400)
