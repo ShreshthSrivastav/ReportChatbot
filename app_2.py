@@ -250,10 +250,11 @@ if __name__ == "__main__":
                     st.error(f"Error adding data to Pinecone: {str(e)}")
 
 
-    del_index = st.sidebar.button('Delete all PINECONE index')
-    if del_index:
-        delete_pinecone_index('all')
-        st.sidebar.success('All indexes deleted successfully.')
+            with st.spinner('Deleting all the indexes...'):
+                del_index = st.sidebar.button('Delete all PINECONE index')
+                if del_index:
+                    delete_pinecone_index('all')
+                    st.sidebar.success('All indexes deleted successfully.')
 
         
     # If the file is uploaded, load the PDF
