@@ -217,12 +217,12 @@ if __name__ == "__main__":
         openai_valid = validate_openai_api_key(openai_api_key) if openai_api_key else False
         pinecone_valid = validate_pinecone_api_key(pinecone_api_key) if pinecone_api_key else False
 
-        if not (openai_valid and pinecone_valid):
-            st.stop()
+        # if not (openai_valid and pinecone_valid):
+        #     st.stop()
 
         if st.session_state.uploaded_file and add_data:
-            # if not api_key:
-            #     st.error("Please provide a valid OpenAI API Key before adding data.")
+            if not (openai_valid and pinecone_valid):
+                st.error("Please provide a valid OpenAI API and PINECONE API Keys")
             # elif pinecone_api_key:
             #     st.error("Please provide a valid PINECONE API Key before adding data.")
             # else:
