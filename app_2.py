@@ -223,9 +223,7 @@ if __name__ == "__main__":
         if st.session_state.uploaded_file and add_data:
             if not (openai_valid and pinecone_valid):
                 st.error("Please provide a valid OpenAI API and PINECONE API Keys")
-            # elif pinecone_api_key:
-            #     st.error("Please provide a valid PINECONE API Key before adding data.")
-            # else:
+                st.stop()
             with st.spinner('Reading, chunking and embedding file ...'):
                 bytes_data = st.session_state.uploaded_file.read()
                 file_name = os.path.join('./', st.session_state.uploaded_file.name)
