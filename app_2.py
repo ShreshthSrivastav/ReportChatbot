@@ -168,7 +168,7 @@ def calculate_embedding_cost(texts):
     # print(f'Embedding Cost in USD: {total_tokens / 1000 * 0.0004:.6f}')
     return total_tokens,   total_tokens / 1000 * 0.0004
 
-def delete_pinecone_index(index_name='all'):
+def delete_pinecone_index(index_name='all',api_key):
 
     # pc = pinecone.Pinecone()
     pinecone.init(api_key=api_key)
