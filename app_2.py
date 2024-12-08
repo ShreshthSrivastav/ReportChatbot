@@ -37,6 +37,7 @@ def validate_openai_api_key(api_key):
 # Function to validate Pinecone API Key
 def validate_pinecone_api_key(api_key):
     try:
+        os.environ["PINECONE_API_KEY"] = api_key
         pc = pinecone.Pinecone(api_key=api_key)
         pc.list_indexes()   # Test operation
         return True
@@ -84,7 +85,8 @@ def insert_or_fetch_embeddings(chunks, index_name, api_key):
     # from langchain_openai import OpenAIEmbeddings
     # from pinecone import PodSpec
     # from pinecone import ServerlessSpec
-
+    
+    os.environ["PINECONE_API_KEY"] = api_key
     pc = pinecone.Pinecone(api_key=api_key)
     embeddings = OpenAIEmbeddings()
     
